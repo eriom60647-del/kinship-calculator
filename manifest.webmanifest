@@ -1,0 +1,14 @@
+{
+  "name": "親戚稱呼計算機",
+  "short_name": "親戚計算",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#9b111e",
+  "theme_color": "#9b111e",
+  "description": "台灣常用的過年親戚稱呼計算工具（A + B = C）。",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
