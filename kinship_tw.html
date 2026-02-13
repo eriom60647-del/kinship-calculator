@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>過年親戚稱呼計算機（台灣常用）</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; margin: 24px; line-height: 1.55; }
+    .card { max-width: 960px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 14px; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    .muted { color: #666; font-size: 14px; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    select, input, textarea, button { padding: 10px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
+    select, input, textarea { width: 100%; }
+    button { cursor: pointer; }
+    .row { display: grid; grid-template-columns: 1fr 52px 1fr 52px 1fr; gap: 10px; align-items: center; margin: 14px 0; }
+    .op { text-align:center; font-size:18px; }
+    .result { background:#fafafa; border:1px dashed #bbb; padding: 14px; border-radius: 12px; }
+    .pill { display:inline-block; padding: 3px 10px; border-radius: 999px; border: 1px solid #ddd; margin-right: 6px; font-size: 13px; background: #fff; }
+    .warn { color:#b00020; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .small { font-size: 13px; color:#444; }
+    code { background:#fff; border:1px solid #eee; padding: 1px 6px; border-radius: 8px; }
+    hr { border:none;border-top:1px solid #eee;margin:18px 0; }
+    @media (max-width: 720px){
+      .row { grid-template-columns: 1fr 40px 1fr; grid-auto-rows:auto; }
+      .row .eq { display:none; }
+      .row input { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>過年親戚稱呼計算機（台灣常用）</h1>
+    <div class="muted">概念：A稱謂 ＋ B稱謂 ＝ C稱謂（例：爸爸 + 哥哥 = 伯父）</div>
+
+    <div class="toolbar">
+      <div style="min-width:240px; flex: 1;">
+        <div class="muted" style="margin-bottom:6px;">我的身分（用來判斷 公婆 / 岳父母）</div>
+        <select id="selfRole">
+          <option value="unknown">不指定（給中性提示）</option>
+          <option value="husband">我是「丈夫」（配偶父母＝岳父/岳母）</option>
+          <option value="wife">我是「妻子」（配偶父母＝公公/婆婆）</option>
+        </select>
+      </div>
+      <div style="min-width:240px; flex: 1;">
+        <div class="muted" style="margin-bottom:6px;">模式</div>
+        <select id="mode">
+          <option value="strict">嚴格模式（找不到就提示加規則）</option>
+          <option value="hint">提示模式（會顯示可能的多種叫法）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <select id="a"></select>
+      <div class="op">＋</div>
+      <select id="b"></select>
+      <div class="op eq">＝</div>
+      <input id="c" readonly placeholder="結果 C 稱謂" />
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin: 6px 0 0;">
+      <button type="button" onclick="useResultAsA()">把結果當下一次的 A</button>
+      <button type="button" onclick="swapAB()">交換 A/B</button>
+      <button type="button" onclick="clearAll()">清空</button>
+    </div>
+
+    <div class="result" id="explain" style="margin-top:12px;"></div>
+
+    <hr />
+
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px;">快速測試（台灣常用）</div>
+        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+          <button type="button" onclick="quick('爸爸','哥哥')">爸爸 + 哥哥</button>
+          <button type="button" onclick="quick('爸爸','弟弟')">爸爸 + 弟弟</button>
+          <button type="button" onclick="quick('爸爸','姊姊')">爸爸 + 姊姊</button>
+          <button type="button" onclick="quick('媽媽','哥哥')">媽媽 + 哥哥</button>
+          <button type="button" onclick="quick('媽媽','妹妹')">媽媽 + 妹妹</button>
+          <button type="button" onclick="quick('哥哥','兒子')">哥哥 + 兒子</button>
+          <button type="button" onclick="quick('姊姊','女兒')">姊姊 + 女兒</button>
+          <button type="button" onclick="quick('配偶','爸爸')">配偶 + 爸爸</button>
+          <button type="button" onclick="quick('爸爸','爸爸')">爸爸 + 爸爸</button>
+          <button type="button" onclick="quick('媽媽','媽媽')">媽媽 + 媽媽</button>
+        </div>
+
+        <div class="small muted" style="margin-top:12px;">
+          ✅ 目前內建：直系、祖父母/外祖父母、伯叔姑、舅姨、侄/外甥、配偶父母（依身分判斷）。<br/>
+          想要更完整（堂/表、伯母/叔母/姑丈/舅媽/姨丈、姻親再延伸、年齡排序），用右側自訂規則就能加。
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:8px;">自訂規則（JSON，可新增/覆蓋）</div>
+        <div class="muted">key 用 <code>A|B</code>，value 用稱謂字串（可寫多個可能，用「/」分隔）</div>
+        <textarea id="custom" rows="8" placeholder='例如：
+{
+  "伯父|老婆": "伯母",
+  "叔叔|老婆": "叔母",
+  "姑姑|老公": "姑丈",
+  "舅舅|老婆": "舅媽",
+  "阿姨|老公": "姨丈",
+  "伯父|兒子": "堂哥/堂弟（需年齡）"
+}'></textarea>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button type="button" onclick="applyCustom()">套用自訂規則</button>
+          <button type="button" onclick="resetCustom()">清空自訂規則</button>
+        </div>
+        <div id="customMsg" class="small muted" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ===== 可選稱謂（台灣常用 / 常見口語）=====
+  const options = [
+    "我",
+
+    // 直系
+    "爸爸","媽媽",
+    "兒子","女兒",
+
+    // 配偶（台灣常用「老公/老婆」，也給一個中性「配偶」）
+    "配偶","老公","老婆",
+
+    // 同輩
+    "哥哥","弟弟","姊姊","妹妹",
+
+    // 祖父母
+    "爺爺","奶奶",
+    "外公","外婆",
+
+    // 父系旁系（伯叔姑）
+    "伯父","叔叔","姑姑",
+
+    // 母系旁系（舅姨）
+    "舅舅","阿姨",
+
+    // 晚輩
+    "侄子","侄女",
+    "外甥","外甥女"
+  ];
+
+  // ===== 規則表：A + B => C（台灣常用，先放高確定性組合）=====
+  // 註：台灣「姑姑」一般指父親的姊妹；「阿姨」一般指母親的姊妹；「舅舅」母親的兄弟。
+  // 若要區分「伯父(父兄) / 叔叔(父弟)」需要父方手足的年齡關係；這裡用「爸爸+哥哥/弟弟」來避開歧義。
+  const baseRules = {
+    // 我 + ...
+    "我|爸爸": "爸爸",
+    "我|媽媽": "媽媽",
+    "我|哥哥": "哥哥",
+    "我|弟弟": "弟弟",
+    "我|姊姊": "姊姊",
+    "我|妹妹": "妹妹",
+    "我|配偶": "配偶",
+    "我|老公": "老公",
+    "我|老婆": "老婆",
+    "我|兒子": "兒子",
+    "我|女兒": "女兒",
+
+    // 父母 -> 祖父母/外祖父母
+    "爸爸|爸爸": "爺爺",
+    "爸爸|媽媽": "奶奶",
+    "媽媽|爸爸": "外公",
+    "媽媽|媽媽": "外婆",
+
+    // 父母 -> 旁系（伯叔姑 / 舅姨）
+    "爸爸|哥哥": "伯父",
+    "爸爸|弟弟": "叔叔",
+    "爸爸|姊姊": "姑姑",
+    "爸爸|妹妹": "姑姑",
+
+    "媽媽|哥哥": "舅舅",
+    "媽媽|弟弟": "舅舅",
+    "媽媽|姊姊": "阿姨",
+    "媽媽|妹妹": "阿姨",
+
+    // 兄弟姊妹 -> 侄 / 外甥（台灣常用：兄弟的小孩叫侄；姊妹的小孩叫外甥）
+    "哥哥|兒子": "侄子",
+    "哥哥|女兒": "侄女",
+    "弟弟|兒子": "侄子",
+    "弟弟|女兒": "侄女",
+
+    "姊姊|兒子": "外甥",
+    "姊姊|女兒": "外甥女",
+    "妹妹|兒子": "外甥",
+    "妹妹|女兒": "外甥女"
+  };
+
+  // 自訂規則（覆蓋 baseRules）
+  let customRules = {};
+
+  const $a = document.getElementById("a");
+  const $b = document.getElementById("b");
+  const $c = document.getElementById("c");
+  const $explain = document.getElementById("explain");
+  const $selfRole = document.getElementById("selfRole");
+  const $mode = document.getElementById("mode");
+
+  function fillSelect(sel) {
+    sel.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join("");
+  }
+  function key(a, b){ return `${a}|${b}`; }
+
+  function spouseParentResolution(b, selfRole){
+    // b 是「爸爸/媽媽」時，A 是「配偶/老公/老婆」才會走到這
+    if (selfRole === "wife") {
+      // 我是妻子：配偶=老公，老公的爸媽=公公婆婆
+      return b === "爸爸" ? "公公" : "婆婆";
+    }
+    if (selfRole === "husband") {
+      // 我是丈夫：配偶=老婆，老婆的爸媽=岳父岳母
+      return b === "爸爸" ? "岳父" : "岳母";
+    }
+    // unknown
+    return b === "爸爸" ? "公公/岳父（依身分）" : "婆婆/岳母（依身分）";
+  }
+
+  function getRule(a, b){
+    const k = key(a, b);
+
+    // 先看自訂
+    if (customRules[k]) return { value: customRules[k], source: "自訂規則" };
+
+    // 特殊：配偶父母（依身分）
+    if ((a === "配偶" || a === "老公" || a === "老婆") && (b === "爸爸" || b === "媽媽")) {
+      const v = spouseParentResolution(b, $selfRole.value);
+      return { value: v, source: "內建規則（配偶父母）" };
+    }
+
+    // 內建
+    if (baseRules[k]) return { value: baseRules[k], source: "內建規則" };
+
+    return null;
+  }
+
+  function compute(){
+    const a = $a.value;
+    const b = $b.value;
+
+    if (!a || !b) {
+      $c.value = "";
+      $explain.innerHTML = `<div><span class="pill">提示</span>請選 A 與 B。</div>`;
+      return;
+    }
+
+    const hit = getRule(a, b);
+    if (hit) {
+      $c.value = hit.value;
+      $explain.innerHTML = `
+        <div><span class="pill">計算</span><b>${a}</b> ＋ <b>${b}</b> ＝ <b>${hit.value}</b></div>
+        <div class="small muted" style="margin-top:8px;">來源：${hit.source}（key：${a}|${b}）</div>
+      `;
+      return;
+    }
+
+    // 找不到規則：嚴格模式 vs 提示模式
+    $c.value = "";
+    if ($mode.value === "hint") {
+      $explain.innerHTML = `
+        <div class="warn"><span class="pill">可能有多種</span><b>${a}</b> ＋ <b>${b}</b> 沒有唯一答案（尚未定義）</div>
+        <div class="small muted" style="margin-top:8px;">
+          你可以用右側自訂規則補上：<code>"${a}|${b}": "（你要的稱謂）"</code><br/>
+          例如：<code>"伯父|老婆":"伯母"</code>、<code>"阿姨|老公":"姨丈"</code><br/>
+          若牽涉「堂/表」或「年齡排序（哥/弟、姐/妹）」也建議在 value 標註：<code>堂哥/堂弟（需年齡）</code>
+        </div>
+      `;
+    } else {
+      $explain.innerHTML = `
+        <div class="warn"><span class="pill">找不到規則</span><b>${a}</b> ＋ <b>${b}</b>（尚未定義）</div>
+        <div class="small muted" style="margin-top:8px;">
+          請在右側自訂規則加入：<code>"${a}|${b}": "（你要的稱謂）"</code>
+        </div>
+      `;
+    }
+  }
+
+  function quick(a, b){ $a.value = a; $b.value = b; compute(); }
+
+  function useResultAsA(){
+    const v = $c.value.trim();
+    if (!v) return;
+    // 若結果不是 options 內的單一稱謂（可能是「A/B」或帶註解），就不強行加入，避免下拉亂掉
+    if (options.includes(v)) {
+      $a.value = v;
+      compute();
+    } else {
+      $explain.innerHTML = `
+        <div class="warn"><span class="pill">無法連鎖</span>結果是 <b>${escapeHtml(v)}</b>，不在下拉選單中（可能是多種叫法或帶註解）。</div>
+        <div class="small muted" style="margin-top:8px;">
+          做法：把你想要的「單一稱謂」加進 options（程式最上方的 options 陣列），或用自訂規則把結果改成單一詞。
+        </div>
+      `;
+    }
+  }
+
+  function swapAB(){
+    const a = $a.value, b = $b.value;
+    $a.value = b; $b.value = a;
+    compute();
+  }
+
+  function clearAll(){
+    $a.value = "我";
+    $b.value = "爸爸";
+    compute();
+  }
+
+  function applyCustom(){
+    const msg = document.getElementById("customMsg");
+    try {
+      const txt = document.getElementById("custom").value.trim();
+      if (!txt) { customRules = {}; msg.textContent = "已清空（目前沒有自訂規則）"; compute(); return; }
+      const obj = JSON.parse(txt);
+
+      for (const [k, v] of Object.entries(obj)) {
+        if (!k.includes("|")) throw new Error(`key 必須包含 "|"：${k}`);
+        if (typeof v !== "string") throw new Error(`value 必須是字串：${k}`);
+      }
+      customRules = obj;
+      msg.textContent = `已套用 ${Object.keys(customRules).length} 條自訂規則`;
+      compute();
+    } catch (e) {
+      msg.textContent = `解析失敗：${e.message}`;
+    }
+  }
+
+  function resetCustom(){
+    document.getElementById("custom").value = "";
+    customRules = {};
+    document.getElementById("customMsg").textContent = "已清空（目前沒有自訂規則）";
+    compute();
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+  }
+
+  // init
+  fillSelect($a);
+  fillSelect($b);
+
+  $a.value = "爸爸";
+  $b.value = "哥哥";
+
+  $a.addEventListener("change", compute);
+  $b.addEventListener("change", compute);
+  $selfRole.addEventListener("change", compute);
+  $mode.addEventListener("change", compute);
+
+  compute();
+</script>
+</body>
+</html>
